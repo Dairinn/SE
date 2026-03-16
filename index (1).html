@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cambridge Speaking Examiner Timer</title>
+<style>
+:root {
+  --bg: #0f0f0f; --surface: #161616; --surface2: #1e1e1e;
+  --border: #2a2a2a; --border2: #444; --text: #e0e0e0;
+  --text2: #888; --text3: #555; --hint-border: #222;
+}
+.light {
+  --bg: #f4f2ee; --surface: #ffffff; --surface2: #efefef;
+  --border: #ddd; --border2: #bbb; --text: #1a1a1a;
+  --text2: #666; --text3: #aaa; --hint-border: #e0e0e0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; transition: background 0.3s, color 0.3s; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1rem 0; flex-wrap: wrap; gap: 8px; }
+.nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.nav-btn { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+.nav-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.nav-btn:hover { background: var(--surface2); color: var(--text); }
+.theme-btn { font-size: 16px; background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; transition: all 0.2s; line-height: 1; }
+.theme-btn:hover { background: var(--surface2); }
+.page { display: none; padding: 1.5rem 1rem 2rem; }
+.page.active { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.page-title { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--text2); }
+.timers-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; width: 100%; }
+.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 18px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1 1 170px; min-width: 160px; max-width: 210px; transition: border-color 0.3s, background 0.3s; }
+.timer-card.warn { border-color: #BA7517 !important; border-width: 1.5px; }
+.timer-card.over { border-color: #A32D2D !important; border-width: 1.5px; }
+.card-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text2); text-align: center; line-height: 1.7; }
+.card-range { font-size: 11px; color: var(--text3); letter-spacing: 1px; }
+.ring-wrap { position: relative; }
+.ring-wrap svg { display: block; transform: rotate(-90deg); }
+.time-display { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Courier New', monospace; font-weight: bold; color: var(--text); letter-spacing: 1px; }
+.time-display.warn { color: #BA7517; }
+.time-display.over { color: #A32D2D; }
+.btns { display: flex; gap: 8px; }
+button.tb { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 1px; border-radius: 8px; cursor: pointer; padding: 6px 14px; border: 1px solid var(--border); background: transparent; color: var(--text); transition: background 0.15s; }
+button.tb:hover { background: var(--surface2); }
+button.tb.primary { border-color: var(--border2); }
+.hint-box { border: 1px solid var(--hint-border); border-radius: 10px; padding: 14px 24px; display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+.hint-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.hint-name { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text2); }
+.hint-range { font-size: 13px; font-weight: bold; color: var(--text); }
+.track-color { stroke: var(--border); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('yle', this)">YLE</button>
+    <button class="nav-btn" onclick="showPage('a2', this)">A2 Key</button>
+    <button class="nav-btn" onclick="showPage('b1', this)">B1 Preliminary</button>
+  </div>
+  <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+</div>
+
+<div class="page active" id="page-yle">
+  <div class="page-title">YLE Exams</div>
+  <div class="timers-row"><div id="yle-timer"></div></div>
+  <div class="hint-box">
+    <div class="hint-item"><span class="hint-name">Starters</span><span class="hint-range">3–5 mins</span></div>
+    <div class="hint-item"><span class="hint-name">Movers</span><span class="hint-range">5–7 mins</span></div>
+    <div class="hint-item"><span class="hint-name">Flyers</span><span class="hint-range">7–9 mins</span></div>
+  </div>
+</div>
+
+<div class="page" id="page-a2">
+  <div class="page-title">A2 Key</div>
+  <div class="timers-row" id="a2-timers"></div>
+</div>
+
+<div class="page" id="page-b1">
+  <div class="page-title">B1 Preliminary</div>
+  <div class="timers-row" id="b1-timers"></div>
+</div>
+
+<script>
+let isLight = false;
+
+function toggleTheme() {
+  isLight = !isLight;
+  document.body.classList.toggle('light', isLight);
+  document.getElementById('theme-toggle').textContent = isLight ? '🌙' : '☀️';
+}
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function fmt(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, "0");
+  const sec = (s % 60).toString().padStart(2, "0");
+  return m + ":" + sec;
+}
+
+function makeTimer({ container, label, range, stroke, cap, size }) {
+  size = size || 110;
+  const r = (size / 2) - 8;
+  const C = 2 * Math.PI * r;
+  const cx = size / 2, cy = size / 2;
+  const fontSize = size < 100 ? "22px" : "28px";
+  let elapsed = 0, running = false, started = false, iv = null;
+
+  const card = document.createElement("div");
+  card.className = "timer-card";
+  card.innerHTML = `
+    <div class="card-label">${label}${range ? '<br><span class="card-range">' + range + '</span>' : ''}</div>
+    <div class="ring-wrap" style="width:${size}px;height:${size}px">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle class="track-color" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke-width="5"/>
+        <circle class="arc" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="5"
+          stroke-dasharray="0 ${C}" stroke-linecap="round" style="transition:stroke-dasharray 0.8s ease"/>
+      </svg>
+      <div class="time-display" style="font-size:${fontSize}"></div>
+    </div>
+    <div class="btns">
+      <button class="tb primary start-btn">START</button>
+      <button class="tb rst-btn">RESET</button>
+    </div>
+  `;
+
+  container.appendChild(card);
+
+  const disp = card.querySelector('.time-display');
+  const arc  = card.querySelector('.arc');
+  const btn  = card.querySelector('.start-btn');
+  const rst  = card.querySelector('.rst-btn');
+
+  function render() {
+    const pct = Math.min(1, elapsed / cap);
+    const warn = elapsed >= cap * 0.85 && elapsed < cap;
+    const over = elapsed >= cap;
+    disp.textContent = fmt(elapsed);
+    disp.className = "time-display" + (over ? " over" : warn ? " warn" : "");
+    card.className = "timer-card" + (over ? " over" : warn ? " warn" : "");
+    arc.style.strokeDasharray = `${C * pct} ${C}`;
+    arc.style.stroke = over ? "#A32D2D" : warn ? "#BA7517" : stroke;
+    btn.textContent = running ? "PAUSE" : started ? "RESUME" : "START";
+  }
+
+  btn.addEventListener("click", () => {
+    if (running) { clearInterval(iv); running = false; }
+    else { started = true; running = true; iv = setInterval(() => { elapsed++; render(); }, 1000); }
+    render();
+  });
+  rst.addEventListener("click", () => {
+    clearInterval(iv); elapsed = 0; running = false; started = false; render();
+  });
+  render();
+}
+
+makeTimer({ container: document.getElementById('yle-timer'), label: "Timer", range: null, stroke: "#1D9E75", cap: 9*60, size: 130 });
+
+[
+  { label: "Total",  range: "8–10 mins", stroke: "#378ADD", cap: 10*60 },
+  { label: "Part 1", range: "3–4 mins",  stroke: "#1D9E75", cap: 4*60  },
+  { label: "Part 2", range: "5–6 mins",  stroke: "#993556", cap: 6*60  },
+].forEach(t => makeTimer({ container: document.getElementById('a2-timers'), ...t }));
+
+[
+  { label: "Total",  range: "10–12 mins", stroke: "#c9a227", cap: 12*60 },
+  { label: "Part 1", range: "2–3 mins",   stroke: "#1D9E75", cap: 3*60  },
+  { label: "Part 2", range: "2–3 mins",   stroke: "#378ADD", cap: 3*60  },
+  { label: "Part 3", range: "3 mins",     stroke: "#993556", cap: 3*60  },
+  { label: "Part 4", range: "3 mins",     stroke: "#BA7517", cap: 3*60  },
+].forEach(t => makeTimer({ container: document.getElementById('b1-timers'), ...t }));
+</script>
+</body>
+</html>
