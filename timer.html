@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cambridge Speaking Timer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #000000;
+    color: #F0EDE8;
+    font-family: Arial, sans-serif;
+    padding: 16px;
+    min-height: 100%;
+  }
+
+  h1 {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #5E5C58;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  .card-label {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #5E5C58;
+    margin-bottom: 6px;
+  }
+
+  .time-display {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 64px;
+    font-weight: normal;
+    color: #F0EDE8;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  .time-target {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #5E5C58;
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: bottom;
+    padding-bottom: 6px;
+  }
+
+  .time-warning { color: #D4860A; }
+  .time-danger  { color: #D94F4F; }
+
+  .overtime-badge {
+    display: none;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #2A0E0E;
+    color: #D94F4F;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .bar-track {
+    background: #2A2A2A;
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 3px;
+    border-radius: 2px;
+    background: #2EAA76;
+    width: 0%;
+  }
+
+  .part-sub {
+    font-size: 11px;
+    color: #5E5C58;
+    margin-top: 4px;
+  }
+
+  .dots {
+    margin-top: 10px;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background: #2A2A2A;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .dot-done   { background: #2EAA76; }
+  .dot-active { background: #4A8FD4; }
+  .dot-over   { background: #D94F4F; }
+  .dot-label  {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    color: #5E5C58;
+    vertical-align: middle;
+  }
+
+  /* Preset grid */
+  .preset-label {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #5E5C58;
+    margin-bottom: 10px;
+  }
+
+  .preset-groups {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+
+  .preset-groups td {
+    width: 33%;
+    vertical-align: top;
+    padding-right: 6px;
+  }
+
+  .preset-group-label {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #5E5C58;
+    margin-bottom: 5px;
+  }
+
+  .preset-btn {
+    display: block;
+    width: 100%;
+    padding: 8px 4px;
+    border: 1px solid #2A2A2A;
+    border-radius: 8px;
+    background: #1A1A1A;
+    color: #9B9890;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 5px;
+    line-height: 1.4;
+  }
+
+  .setup-label {
+    font-size: 13px;
+    color: #9B9890;
+    width: 120px;
+  }
+
+  .setup-row {
+    margin-bottom: 12px;
+  }
+
+  .setup-row td {
+    vertical-align: middle;
+    padding: 0;
+  }
+
+  input[type=number], select, input[type=text] {
+    background: #000;
+    border: 1px solid #2A2A2A;
+    border-radius: 6px;
+    color: #F0EDE8;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  input[type=number] { width: 56px; text-align: center; }
+  input[type=text]   { width: 100%; }
+  select { width: auto; }
+
+  .divider {
+    height: 1px;
+    background: #2A2A2A;
+    margin: 12px 0;
+  }
+
+  .part-row {
+    margin-bottom: 10px;
+  }
+
+  .part-row table { width: 100%; }
+  .part-row td { vertical-align: middle; }
+  .part-row td:last-child { width: 80px; text-align: right; }
+
+  .btn {
+    background: #1A1A1A;
+    border: 1px solid #3A3A3A;
+    border-radius: 8px;
+    color: #F0EDE8;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px 8px;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background: #F0EDE8;
+    color: #000;
+    border-color: #F0EDE8;
+  }
+
+  .btn-disabled {
+    opacity: 0.3;
+  }
+
+  .controls-table {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .controls-table td {
+    padding-right: 6px;
+    width: 33%;
+  }
+
+  .controls-table td:last-child { padding-right: 0; }
+
+  .reconfigure {
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    color: #5E5C58;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .unit-label {
+    font-size: 13px;
+    color: #5E5C58;
+    padding-left: 5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cambridge Speaking Timer</h1>
+
+<!-- Setup -->
+<div id="setupPanel">
+  <div class="preset-label">Quick presets</div>
+  <table class="preset-groups"><tr>
+    <td>
+      <div class="preset-group-label">YLE</div>
+      <button class="preset-btn" onclick="applyPreset('starters')">Starters<br>3-5 min</button>
+      <button class="preset-btn" onclick="applyPreset('movers')">Movers<br>5-7 min</button>
+      <button class="preset-btn" onclick="applyPreset('flyers')">Flyers<br>7-9 min</button>
+    </td>
+    <td>
+      <div class="preset-group-label">A2 Key</div>
+      <button class="preset-btn" onclick="applyPreset('key_pair')">Pair<br>8 min<br>2 parts</button>
+      <button class="preset-btn" onclick="applyPreset('key_trio')">Group 3<br>13 min<br>2 parts</button>
+    </td>
+    <td>
+      <div class="preset-group-label">B1 Prelim</div>
+      <button class="preset-btn" onclick="applyPreset('prelim_pair')">Pair<br>10 min<br>4 parts</button>
+      <button class="preset-btn" onclick="applyPreset('prelim_trio')">Group 3<br>15 min<br>4 parts</button>
+    </td>
+  </tr></table>
+
+  <div class="card">
+    <div class="card-label">Setup</div>
+    <table class="setup-row"><tr>
+      <td class="setup-label">Total duration</td>
+      <td><input type="number" id="totalMinutes" value="10" min="1" max="60"><span class="unit-label">min</span></td>
+    </tr></table>
+    <table class="setup-row"><tr>
+      <td class="setup-label">Number of parts</td>
+      <td>
+        <select id="numParts" onchange="buildSplits()">
+          <option value="1">1 part</option>
+          <option value="2" selected>2 parts</option>
+          <option value="3">3 parts</option>
+          <option value="4">4 parts</option>
+        </select>
+      </td>
+    </tr></table>
+    <div class="divider"></div>
+    <div id="partSplits"></div>
+    <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="initTimer()">Start timer</button>
+  </div>
+</div>
+
+<!-- Timer -->
+<div id="timerPanel" style="display:none;">
+  <div class="card">
+    <div class="card-label">Total elapsed</div>
+    <div>
+      <span class="time-display" id="totalDisplay">00:00</span>
+      <span class="time-target" id="totalTarget"></span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="totalBar"></div></div>
+  </div>
+
+  <div class="card" id="partCard">
+    <div class="card-label" id="partLabel">Part 1</div>
+    <div>
+      <span class="time-display" id="partDisplay">00:00</span>
+      <span class="overtime-badge" id="overtimeBadge">over</span>
+      <span class="time-target" id="partTarget"></span>
+    </div>
+    <div class="part-sub" id="partInfo"></div>
+    <div class="bar-track"><div class="bar-fill" id="partBar" style="background:#4A8FD4;"></div></div>
+    <div class="dots" id="partDots"></div>
+  </div>
+
+  <table class="controls-table"><tr>
+    <td><button class="btn btn-primary" id="startBtn" onclick="toggleTimer()">Start</button></td>
+    <td><button class="btn" id="nextPartBtn" onclick="nextPart()">Next part</button></td>
+    <td><button class="btn" onclick="resetTimer()">Reset</button></td>
+  </tr></table>
+  <div class="reconfigure" onclick="showSetup()">back to setup</div>
+</div>
+
+<script>
+var PRESETS = {
+  starters:    { total: 3,  yle: true,  parts: [{ name: 'Exam', mins: 3 }] },
+  movers:      { total: 5,  yle: true,  parts: [{ name: 'Exam', mins: 5 }] },
+  flyers:      { total: 7,  yle: true,  parts: [{ name: 'Exam', mins: 7 }] },
+  key_pair:    { total: 8,  yle: false, parts: [{ name: 'Part 1 - Interview', mins: 3 }, { name: 'Part 2 - Discussion Task', mins: 5 }] },
+  key_trio:    { total: 13, yle: false, parts: [{ name: 'Part 1 - Interview', mins: 5 }, { name: 'Part 2 - Discussion Task', mins: 8 }] },
+  prelim_pair: { total: 10, yle: false, parts: [{ name: 'Part 1 - Interview', mins: 2 }, { name: 'Part 2 - Long Turn', mins: 2 }, { name: 'Part 3 - Collab Task', mins: 3 }, { name: 'Part 4 - Discussion', mins: 3 }] },
+  prelim_trio: { total: 15, yle: false, parts: [{ name: 'Part 1 - Interview', mins: 3 }, { name: 'Part 2 - Long Turn', mins: 4 }, { name: 'Part 3 - Collab Task', mins: 4 }, { name: 'Part 4 - Discussion', mins: 4 }] }
+};
+
+var isYLE = false;
+
+function applyPreset(key) {
+  var p = PRESETS[key];
+  document.getElementById('totalMinutes').value = p.total;
+  document.getElementById('numParts').value = p.parts.length;
+  buildSplits();
+  for (var i = 0; i < p.parts.length; i++) {
+    var m = document.getElementById('partMins' + i);
+    var n = document.getElementById('partName' + i);
+    if (m) m.value = p.parts[i].mins;
+    if (n) n.value = p.parts[i].name;
+  }
+  isYLE = p.yle;
+}
+
+function buildSplits() {
+  var n = parseInt(document.getElementById('numParts').value);
+  var c = document.getElementById('partSplits');
+  c.innerHTML = '';
+  if (n === 1) return;
+  for (var i = 0; i < n; i++) {
+    var div = document.createElement('div');
+    div.className = 'part-row';
+    div.innerHTML = '<table><tr><td><input type="text" id="partName' + i + '" value="Part ' + (i+1) + '"></td><td><input type="number" id="partMins' + i + '" value="5" min="1" max="120"><span class="unit-label">min</span></td></tr></table>';
+    c.appendChild(div);
+    if (i < n - 1) {
+      var dv = document.createElement('div');
+      dv.style.height = '8px';
+      c.appendChild(dv);
+    }
+  }
+}
+
+buildSplits();
+
+var totalElapsed = 0, totalDuration = 0;
+var parts = [], partNames = [], currentPart = 0, partElapsed = 0;
+var running = false, ticker = null;
+
+function initTimer() {
+  var totalMin = parseInt(document.getElementById('totalMinutes').value) || 10;
+  var n = parseInt(document.getElementById('numParts').value);
+  totalDuration = totalMin * 60;
+  totalElapsed = 0;
+  parts = []; partNames = [];
+  if (n === 1) {
+    parts.push(totalDuration); partNames.push('Exam');
+  } else {
+    for (var i = 0; i < n; i++) {
+      var mEl = document.getElementById('partMins' + i);
+      var nEl = document.getElementById('partName' + i);
+      parts.push((parseInt(mEl ? mEl.value : 5) || 1) * 60);
+      partNames.push(nEl && nEl.value.trim() ? nEl.value.trim() : 'Part ' + (i+1));
+    }
+  }
+  currentPart = 0; partElapsed = 0;
+  running = false;
+  if (ticker) { clearInterval(ticker); ticker = null; }
+  document.getElementById('setupPanel').style.display = 'none';
+  document.getElementById('timerPanel').style.display = 'block';
+  document.getElementById('startBtn').innerHTML = 'Start';
+  document.getElementById('nextPartBtn').className = parts.length <= 1 ? 'btn btn-disabled' : 'btn';
+  document.getElementById('totalTarget').innerHTML = '/ ' + fmt(totalDuration);
+  document.getElementById('partCard').style.display = isYLE ? 'none' : 'block';
+  document.getElementById('nextPartBtn').style.display = isYLE ? 'none' : 'block';
+  buildDots();
+  render();
+}
+
+function buildDots() {
+  var c = document.getElementById('partDots');
+  c.innerHTML = '';
+  if (isYLE) return;
+  for (var i = 0; i < parts.length; i++) {
+    var d = document.createElement('span');
+    d.className = 'dot ' + (i === 0 ? 'dot-active' : '');
+    d.id = 'dot' + i;
+    c.appendChild(d);
+  }
+  if (parts.length > 1) {
+    var lbl = document.createElement('span');
+    lbl.className = 'dot-label';
+    lbl.id = 'dotLabel';
+    lbl.innerHTML = ' ' + partNames[0];
+    c.appendChild(lbl);
+  }
+}
+
+function fmt(s) {
+  var a = Math.abs(s);
+  var m = Math.floor(a / 60);
+  var ss = a % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (ss < 10 ? '0' : '') + ss;
+}
+
+function setClass(el, cls) { el.className = cls; }
+
+function render() {
+  var tOver = totalElapsed > totalDuration;
+  var td = document.getElementById('totalDisplay');
+  td.innerHTML = fmt(totalElapsed);
+  td.className = 'time-display' + (tOver ? ' time-danger' : totalElapsed >= totalDuration - 60 ? ' time-warning' : '');
+  var tb = document.getElementById('totalBar');
+  var tPct = totalElapsed / totalDuration * 100;
+  if (tPct > 100) tPct = 100;
+  tb.style.width = tPct + '%';
+  tb.style.background = tOver ? '#D94F4F' : totalElapsed >= totalDuration - 180 ? '#D4860A' : '#2EAA76';
+
+  if (isYLE) return;
+
+  var pd = parts[currentPart];
+  var pOver = partElapsed > pd;
+  var ph = document.getElementById('partDisplay');
+  ph.innerHTML = fmt(partElapsed);
+  ph.className = 'time-display' + (pOver ? ' time-danger' : partElapsed >= pd - 60 ? ' time-warning' : '');
+  document.getElementById('overtimeBadge').style.display = pOver ? 'inline' : 'none';
+  document.getElementById('partTarget').innerHTML = '/ ' + fmt(pd);
+  var pb = document.getElementById('partBar');
+  var pPct = partElapsed / pd * 100;
+  if (pPct > 100) pPct = 100;
+  pb.style.width = pPct + '%';
+  pb.style.background = pOver ? '#D94F4F' : partElapsed >= pd - 60 ? '#D4860A' : '#4A8FD4';
+
+  var name = partNames[currentPart] || ('Part ' + (currentPart + 1));
+  document.getElementById('partLabel').innerHTML = parts.length > 1 ? name + ' (' + (currentPart+1) + '/' + parts.length + ')' : name;
+  document.getElementById('partInfo').innerHTML = Math.round(pd / 60) + ' min allocated';
+
+  var dot = document.getElementById('dot' + currentPart);
+  if (dot) dot.className = 'dot ' + (pOver ? 'dot-over' : 'dot-active');
+}
+
+function tick() {
+  totalElapsed++;
+  if (!isYLE) partElapsed++;
+  render();
+}
+
+function toggleTimer() {
+  if (running) {
+    running = false;
+    if (ticker) { clearInterval(ticker); ticker = null; }
+    document.getElementById('startBtn').innerHTML = 'Resume';
+  } else {
+    running = true;
+    ticker = setInterval(tick, 1000);
+    document.getElementById('startBtn').innerHTML = 'Pause';
+  }
+}
+
+function nextPart() {
+  if (isYLE || currentPart >= parts.length - 1) return;
+  var oldDot = document.getElementById('dot' + currentPart);
+  if (oldDot) oldDot.className = 'dot dot-done';
+  currentPart++; partElapsed = 0;
+  var newDot = document.getElementById('dot' + currentPart);
+  if (newDot) newDot.className = 'dot dot-active';
+  var lbl = document.getElementById('dotLabel');
+  if (lbl) lbl.innerHTML = ' ' + partNames[currentPart];
+  if (currentPart === parts.length - 1) {
+    document.getElementById('nextPartBtn').className = 'btn btn-disabled';
+  }
+  render();
+}
+
+function resetTimer() {
+  running = false;
+  if (ticker) { clearInterval(ticker); ticker = null; }
+  totalElapsed = 0; partElapsed = 0; currentPart = 0;
+  document.getElementById('startBtn').innerHTML = 'Start';
+  document.getElementById('nextPartBtn').className = parts.length <= 1 ? 'btn btn-disabled' : 'btn';
+  buildDots(); render();
+}
+
+function showSetup() {
+  running = false;
+  if (ticker) { clearInterval(ticker); ticker = null; }
+  document.getElementById('timerPanel').style.display = 'none';
+  document.getElementById('setupPanel').style.display = 'block';
+}
+</script>
+</body>
+</html>
