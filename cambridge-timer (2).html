@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cambridge Speaking Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.09);
+    --border-md: rgba(0,0,0,0.15);
+    --text-primary: #1A1916;
+    --text-secondary: #6B6860;
+    --text-muted: #A09E9A;
+    --green: #1A7A56;
+    --blue: #1B5FAA;
+    --amber: #B05A00;
+    --red: #A32020;
+    --red-bg: #FAEAEA;
+    --toggle-bg: #E8E6E1;
+  }
+
+  [data-theme="dark"] {
+    --bg: #141412;
+    --surface: #1E1D1A;
+    --border: rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.14);
+    --text-primary: #F0EDE8;
+    --text-secondary: #9B9890;
+    --text-muted: #5E5C58;
+    --green: #2EAA76;
+    --blue: #4A8FD4;
+    --amber: #D4860A;
+    --red: #D94F4F;
+    --red-bg: #2A0E0E;
+    --toggle-bg: #2E2D2A;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem 3rem;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .container { width: 100%; max-width: 460px; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .header h1 {
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .toggle-track {
+    width: 32px; height: 18px;
+    background: var(--toggle-bg);
+    border-radius: 9px;
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .toggle-thumb {
+    width: 12px; height: 12px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    position: absolute;
+    top: 3px; left: 3px;
+    transition: transform 0.3s, background 0.3s;
+  }
+
+  [data-theme="dark"] .toggle-thumb { transform: translateX(14px); background: var(--text-secondary); }
+
+  .section-label {
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .preset-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+
+  .preset-group-label {
+    font-size: 10px;
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    padding: 0 2px;
+  }
+
+  .preset-btn {
+    display: block;
+    width: 100%;
+    padding: 9px 8px;
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.4;
+    margin-bottom: 5px;
+  }
+  .preset-btn:hover { color: var(--text-primary); border-color: var(--text-primary); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .card-label {
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 0.85rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { font-size: 14px; color: var(--text-secondary); flex: 1; }
+  .field-right { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); flex-shrink: 0; }
+
+  input[type=number], select, input[type=text] {
+    padding: 6px 10px;
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
+  }
+  input[type=number] { width: 64px; text-align: center; }
+  input[type=text]   { flex: 1; min-width: 0; }
+  select { cursor: pointer; }
+
+  .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+  .time-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+  .time-display {
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 56px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    transition: color 0.4s;
+  }
+  .time-display.warning { color: var(--amber); }
+  .time-display.danger  { color: var(--red); }
+
+  .time-target {
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 14px;
+    color: var(--text-muted);
+    padding-bottom: 4px;
+  }
+
+  .overtime-badge {
+    display: none;
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--red-bg);
+    color: var(--red);
+    align-self: center;
+  }
+
+  .part-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  .bar-track { height: 3px; background: var(--border); border-radius: 2px; margin-top: 14px; overflow: hidden; }
+  .bar-fill   { height: 100%; border-radius: 2px; transition: width 1s linear, background 0.4s; }
+
+  .dots { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--border-md); transition: background 0.3s; flex-shrink: 0; }
+  .dot.done   { background: var(--green); }
+  .dot.active { background: var(--blue); }
+  .dot.over   { background: var(--red); }
+  .dot-label  { font-size: 11px; color: var(--text-muted); font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace; margin-left: 2px; }
+
+  .controls { display: flex; gap: 8px; margin-bottom: 0.75rem; }
+
+  .btn {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--text-primary); color: var(--bg); border-color: var(--text-primary); }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .reconfigure {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    font-family: 'Consolas', 'Roboto Mono', 'Droid Sans Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+  .reconfigure:hover { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Cambridge Speaking Timer</h1>
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span id="themeLabel">Light</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    </div>
+  </div>
+
+  <!-- Presets + Config -->
+  <div id="setupPanel">
+    <div class="section-label">Quick presets</div>
+    <div class="preset-groups">
+
+      <div>
+        <div class="preset-group-label">YLE</div>
+        <button class="preset-btn" onclick="applyPreset('starters')">Starters<br>3–5 min</button>
+        <button class="preset-btn" onclick="applyPreset('movers')">Movers<br>5–7 min</button>
+        <button class="preset-btn" onclick="applyPreset('flyers')">Flyers<br>7–9 min</button>
+      </div>
+
+      <div>
+        <div class="preset-group-label">A2 Key</div>
+        <button class="preset-btn" onclick="applyPreset('key_pair')">Pair<br>8 min · 2 parts</button>
+        <button class="preset-btn" onclick="applyPreset('key_trio')">Group of 3<br>13 min · 2 parts</button>
+      </div>
+
+      <div>
+        <div class="preset-group-label">B1 Prelim</div>
+        <button class="preset-btn" onclick="applyPreset('prelim_pair')">Pair<br>10 min · 4 parts</button>
+        <button class="preset-btn" onclick="applyPreset('prelim_trio')">Group of 3<br>15 min · 4 parts</button>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-label">Setup</div>
+      <div class="field">
+        <label>Total duration</label>
+        <div class="field-right">
+          <input type="number" id="totalMinutes" value="10" min="1" max="60"> min
+        </div>
+      </div>
+      <div class="field">
+        <label>Number of parts</label>
+        <div class="field-right">
+          <select id="numParts" onchange="buildSplits()">
+            <option value="1">1 part</option>
+            <option value="2" selected>2 parts</option>
+            <option value="3">3 parts</option>
+            <option value="4">4 parts</option>
+          </select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div id="partSplits"></div>
+      <button class="btn primary" style="width:100%; margin-top:0.85rem;" onclick="initTimer()">Start timer →</button>
+    </div>
+  </div>
+
+  <!-- Timer -->
+  <div id="timerPanel" style="display:none;">
+
+    <!-- Total timer — always shown -->
+    <div class="card" id="totalCard">
+      <div class="card-label">Total elapsed</div>
+      <div class="time-row">
+        <div class="time-display" id="totalDisplay">00:00</div>
+        <div class="time-target" id="totalTarget"></div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="totalBar" style="width:0%;"></div></div>
+    </div>
+
+    <!-- Part timer — hidden for YLE -->
+    <div class="card" id="partCard">
+      <div class="card-label" id="partLabel">Part 1</div>
+      <div class="time-row">
+        <div class="time-display" id="partDisplay">00:00</div>
+        <span class="overtime-badge" id="overtimeBadge">over</span>
+        <div class="time-target" id="partTarget"></div>
+      </div>
+      <div class="part-sub" id="partInfo"></div>
+      <div class="bar-track"><div class="bar-fill" id="partBar" style="width:0%;"></div></div>
+      <div class="dots" id="partDots"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="startBtn" onclick="toggleTimer()">Start</button>
+      <button class="btn" id="nextPartBtn" onclick="nextPart()" disabled>Next part</button>
+      <button class="btn" onclick="resetTimer()">Reset</button>
+    </div>
+    <div class="reconfigure" onclick="showSetup()">← reconfigure</div>
+  </div>
+
+</div>
+<script>
+const PRESETS = {
+  starters:    { total: 3,  yle: true,  parts: [{ name: 'Exam', mins: 3 }] },
+  movers:      { total: 5,  yle: true,  parts: [{ name: 'Exam', mins: 5 }] },
+  flyers:      { total: 7,  yle: true,  parts: [{ name: 'Exam', mins: 7 }] },
+  key_pair:    { total: 8,  yle: false, parts: [{ name: 'Part 1 – Interview', mins: 3 }, { name: 'Part 2 – Discussion Task', mins: 5 }] },
+  key_trio:    { total: 13, yle: false, parts: [{ name: 'Part 1 – Interview', mins: 5 }, { name: 'Part 2 – Discussion Task', mins: 8 }] },
+  prelim_pair: { total: 10, yle: false, parts: [{ name: 'Part 1 – Interview', mins: 2 }, { name: 'Part 2 – Long Turn', mins: 2 }, { name: 'Part 3 – Collab Task', mins: 3 }, { name: 'Part 4 – Discussion', mins: 3 }] },
+  prelim_trio: { total: 15, yle: false, parts: [{ name: 'Part 1 – Interview', mins: 3 }, { name: 'Part 2 – Long Turn', mins: 4 }, { name: 'Part 3 – Collab Task', mins: 4 }, { name: 'Part 4 – Discussion', mins: 4 }] },
+};
+
+let isYLE = false;
+
+function applyPreset(key) {
+  const p = PRESETS[key];
+  document.getElementById('totalMinutes').value = p.total;
+  document.getElementById('numParts').value = p.parts.length;
+  buildSplits();
+  p.parts.forEach((pt, i) => {
+    const m = document.getElementById('partMins' + i);
+    const n = document.getElementById('partName' + i);
+    if (m) m.value = pt.mins;
+    if (n) n.value = pt.name;
+  });
+  isYLE = p.yle || false;
+}
+
+function buildSplits() {
+  const n = parseInt(document.getElementById('numParts').value);
+  const c = document.getElementById('partSplits');
+  c.innerHTML = '';
+  if (n === 1) return;
+  for (let i = 0; i < n; i++) {
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.style.marginBottom = i < n - 1 ? '0.85rem' : '0';
+    div.innerHTML = `<input type="text" id="partName${i}" placeholder="Part ${i+1} name" value="Part ${i+1}"><div class="field-right"><input type="number" id="partMins${i}" value="5" min="1" max="120"> min</div>`;
+    c.appendChild(div);
+  }
+}
+
+buildSplits();
+
+let totalElapsed = 0, totalDuration = 0;
+let parts = [], partNames = [], currentPart = 0, partElapsed = 0;
+let running = false, ticker = null;
+
+function initTimer() {
+  const totalMin = parseInt(document.getElementById('totalMinutes').value) || 10;
+  const n = parseInt(document.getElementById('numParts').value);
+  totalDuration = totalMin * 60;
+  totalElapsed = 0;
+  if (n === 1) {
+    parts = [totalDuration]; partNames = ['Exam'];
+  } else {
+    parts = []; partNames = [];
+    for (let i = 0; i < n; i++) {
+      parts.push((parseInt(document.getElementById('partMins' + i).value) || 1) * 60);
+      const el = document.getElementById('partName' + i);
+      partNames.push(el && el.value.trim() ? el.value.trim() : 'Part ' + (i + 1));
+    }
+  }
+  currentPart = 0; partElapsed = 0;
+  running = false; clearInterval(ticker);
+  document.getElementById('setupPanel').style.display = 'none';
+  document.getElementById('timerPanel').style.display = 'block';
+  document.getElementById('startBtn').textContent = 'Start';
+  document.getElementById('nextPartBtn').disabled = parts.length <= 1;
+  document.getElementById('totalTarget').textContent = '/ ' + fmt(totalDuration);
+
+  // Hide part card for YLE (single total timer only)
+  document.getElementById('partCard').style.display = isYLE ? 'none' : 'block';
+  document.getElementById('nextPartBtn').style.display = isYLE ? 'none' : 'block';
+
+  buildDots(); render();
+}
+
+function buildDots() {
+  const c = document.getElementById('partDots');
+  c.innerHTML = '';
+  if (isYLE) return;
+  parts.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.id = 'dot' + i; d.title = partNames[i];
+    c.appendChild(d);
+  });
+  if (parts.length > 1) {
+    const lbl = document.createElement('span');
+    lbl.className = 'dot-label'; lbl.id = 'dotLabel';
+    lbl.textContent = partNames[0];
+    c.appendChild(lbl);
+  }
+}
+
+function fmt(s) {
+  const a = Math.abs(s), m = Math.floor(a / 60), ss = a % 60;
+  return String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+}
+
+function render() {
+  const tOver = totalElapsed > totalDuration;
+
+  // Total card
+  const td = document.getElementById('totalDisplay');
+  td.textContent = fmt(totalElapsed);
+  td.className = 'time-display' + (tOver ? ' danger' : totalElapsed >= totalDuration - 60 ? ' warning' : '');
+  const tb = document.getElementById('totalBar');
+  tb.style.width = Math.min(totalElapsed / totalDuration * 100, 100) + '%';
+  tb.style.background = tOver ? 'var(--red)' : totalElapsed >= totalDuration - 180 ? 'var(--amber)' : 'var(--green)';
+
+  if (isYLE) return;
+
+  // Part card
+  const pd = parts[currentPart];
+  const pOver = partElapsed > pd;
+
+  const ph = document.getElementById('partDisplay');
+  ph.textContent = fmt(partElapsed);
+  ph.className = 'time-display' + (pOver ? ' danger' : partElapsed >= pd - 60 ? ' warning' : '');
+  document.getElementById('overtimeBadge').style.display = pOver ? 'inline-block' : 'none';
+  document.getElementById('partTarget').textContent = '/ ' + fmt(pd);
+  const pb = document.getElementById('partBar');
+  pb.style.width = Math.min(partElapsed / pd * 100, 100) + '%';
+  pb.style.background = pOver ? 'var(--red)' : partElapsed >= pd - 60 ? 'var(--amber)' : 'var(--blue)';
+
+  const name = partNames[currentPart] || ('Part ' + (currentPart + 1));
+  document.getElementById('partLabel').textContent = parts.length > 1 ? name + ' (' + (currentPart+1) + '/' + parts.length + ')' : name;
+  document.getElementById('partInfo').textContent = Math.round(pd / 60) + ' min allocated';
+
+  const dot = document.getElementById('dot' + currentPart);
+  if (dot) dot.className = 'dot ' + (pOver ? 'over' : 'active');
+}
+
+function tick() {
+  totalElapsed++;
+  if (!isYLE) partElapsed++;
+  render();
+}
+
+function toggleTimer() {
+  if (running) {
+    running = false; clearInterval(ticker);
+    document.getElementById('startBtn').textContent = 'Resume';
+  } else {
+    running = true; ticker = setInterval(tick, 1000);
+    document.getElementById('startBtn').textContent = 'Pause';
+  }
+}
+
+function nextPart() {
+  if (isYLE || currentPart >= parts.length - 1) return;
+  document.getElementById('dot' + currentPart).className = 'dot done';
+  currentPart++; partElapsed = 0;
+  document.getElementById('dot' + currentPart).className = 'dot active';
+  const lbl = document.getElementById('dotLabel');
+  if (lbl) lbl.textContent = partNames[currentPart];
+  if (currentPart === parts.length - 1) document.getElementById('nextPartBtn').disabled = true;
+  render();
+}
+
+function resetTimer() {
+  running = false; clearInterval(ticker);
+  totalElapsed = 0; partElapsed = 0; currentPart = 0;
+  document.getElementById('startBtn').textContent = 'Start';
+  document.getElementById('nextPartBtn').disabled = parts.length <= 1;
+  buildDots(); render();
+}
+
+function showSetup() {
+  running = false; clearInterval(ticker);
+  document.getElementById('timerPanel').style.display = 'none';
+  document.getElementById('setupPanel').style.display = 'block';
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', dark ? 'light' : 'dark');
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+</script>
+</body>
+</html>
